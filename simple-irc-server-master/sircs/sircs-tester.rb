@@ -1,34 +1,17 @@
 #! /usr/bin/env ruby
 #
 # CMPU-375 Simple IRC server tester
-#
-# This script sends a sequence of commands to your IRC server and inspects
+# Team: Junrui, Tahsin, Shihan 
+# This script sends a sequence of commands to our IRC server and inspects
 # the replies to see if it is behaving correctly.
 #
-# Some tests depend on the correct execution of previous ones.
-# For example, you cannot pass the "PART" test if your "JOIN" test failed.
-# For this reason, the script exits once the server fails a test.
-# If you fail a specific test, we suggest you modify this code 
-# to print out exactly # what is going on, or perhaps remove tests that
-# fail so that you can test other, unrelated tests if you simply haven't
-# implemented a particular bit of functionality yet (e.g., you might
-# remove the WHO or LIST tests to test PART).
-# 
-# Part of the reason we give out the code for this 
-# script so that you can modify it and write your own test
-# scripts later on.  Remember that passing this does not ensure full credit
-# on the final IRC server grade:  The final tests will be more extensive
-# so you may wish to add your own, more stressful tests to this script, for
-# completeness.
 #
-# Enjoy!
 #
 
-## SKELETON STOLEN FROM http://www.bigbold.com/snippets/posts/show/1785
 require 'socket'
 
 $SERVER = "127.0.0.1"
-$PORT = 6667  ########## DONT FORGET TO CHANGE THIS
+$PORT = 9999   
 
 if ARGV.size == 0
     puts "Usage: ./sircs-tester.rb [servIpAddr] [servPort]"
@@ -60,14 +43,14 @@ class IRC
     def recv_data_from_server (timeout)
         pending_event = Time.now.to_i
         received_data = Array.new
-        k = 0 
+        k = 0
         flag = 0
         while flag == 0
             ## check for timeout
             time_elapsed = Time.now.to_i - pending_event
             if (time_elapsed > timeout)
                 flag = 1
-            end 
+            end
             ready = select([@irc], nil, nil, 0.0001)
             next if !ready
             for s in ready[0]
@@ -90,11 +73,11 @@ class IRC
             return true
         end
     end
-    
+
     def send(s)
         # Send a message to the irc server and print it to the screen
         puts "--> #{s}"
-        @irc.send "#{s}\n", 0 
+        @irc.send "#{s}\n", 0
     end
 
     def connect()
@@ -109,7 +92,7 @@ class IRC
     def send_nick(s)
         send("NICK #{s}")
     end
-    
+
     def send_user(s)
         send("USER #{s}")
     end
@@ -117,8 +100,8 @@ class IRC
     def get_motd
         data = recv_data_from_server(1)
         ## CHECK data here
-      
-        if(data[0] =~ /^:[^ ]+ *375 *rui *:- *[^ ]+ *Message of the day - *.\n/)
+
+        if(data[0] =~ /^:[^ ]+ *375 *sherlock *:- *[^ ]+ *Message of the day - *.\n/)
             puts "\tRPL_MOTDSTART 375 correct"
         else
             puts "hello"
@@ -126,11 +109,11 @@ class IRC
             puts "\tRPL_MOTDSTART 375 incorrect"
             return false
         end
-        
+
         k = 1
         while ( k < data.size-1)
-            
-            if(data[k] =~ /:[^ ]+ *372 *rui *:- *.*/)
+
+            if(data[k] =~ /:[^ ]+ *372 *sherlock *:- *.*/)
                 puts "\tRPL_MOTD 372 correct"
             else
                 puts "\tRPL_MOTD 372 incorrect"
@@ -139,28 +122,28 @@ class IRC
             k = k + 1
         end
 
-        if(data[data.size-1] =~ /:[^ ]+ *376 *rui *:End of \/MOTD command/)
+        if(data[data.size-1] =~ /:[^ ]+ *376 *sherlock *:End of \/MOTD command/)
             puts "\tRPL_ENDOFMOTD 376 correct"
         else
             puts "\tRPL_ENDOFMOTD 376 incorrect"
             return false
         end
-        
+
         return true
     end
 
     def send_privmsg(s1, s2)
 	send("PRIVMSG #{s1} :#{s2}")
     end
-        
+
     def raw_join_channel(joiner, channel)
         send("JOIN #{channel}")
         ignore_reply()
     end
-    
+
     def join_channel(joiner, channel)
         send("JOIN #{channel}")
-        
+
         data = recv_data_from_server(1);
         if(data[0] =~ /^:#{joiner}.*JOIN *#{channel}/)
             puts "\tJOIN echoed back"
@@ -168,30 +151,30 @@ class IRC
             puts "\tJOIN was not echoed back to the client"
             return false
         end
-        
+
         if(data[1] =~ /^:[^ ]+ *353 *#{joiner} *= *#{channel} *:.*#{joiner}/)
             puts "\tRPL_NAMREPLY 353 correct"
         else
             puts "\tRPL_NAMREPLY 353 incorrect"
             return false
         end
-        
+
         if(data[2] =~ /^:[^ ]+ *366 *#{joiner} *#{channel} *:End of \/NAMES list/)
             puts "\tRPL_ENDOFNAMES 366 correct"
         else
             puts "\tRPL_ENDOFNAMES 366 incorrect"
             return false
         end
-        
+
         return true
     end
 
     def who(s)
         send("WHO #{s}")
-        
+
         data = recv_data_from_server(1);
-        
-        if(data[0] =~ /^:[^ ]+ *352 *rui *#{s} *please *[^ ]+ *[^ ]+ *rui *H *:0 */)
+
+        if(data[0] =~ /^:[^ ]+ *352 *sherlock *#{s} *myUsername *[^ ]+ *[^ ]+ *rui *H *:0 */)
             puts "\tRPL_WHOREPLY 352 correct"
         else
             puts data
@@ -199,7 +182,7 @@ class IRC
             return false
         end
 
-        if(data[1] =~ /^:[^ ]+ *315 *rui *#{s} *:End of \/WHO list/)
+        if(data[1] =~ /^:[^ ]+ *315 *sherlock *#{s} *:End of \/WHO list/)
             puts "\tRPL_ENDOFWHO 315 correct"
         else
             puts "\tRPL_ENDOFWHO 315 incorrect"
@@ -207,39 +190,39 @@ class IRC
         end
         return true
     end
-    
+
     def list
 	send("LIST")
-        
+
         data = recv_data_from_server(1);
-        if(data[0] =~ /^:[^ ]+ *321 *rui *Channel *:Users Name/)
+        if(data[0] =~ /^:[^ ]+ *321 *sherlock *Channel *:Users Name/)
             puts "\tRPL_LISTSTART 321 correct"
         else
             puts "\tRPL_LISTSTART 321 incorrect"
             return false
         end
-        
-        if(data[1] =~ /^:[^ ]+ *322 *rui *#linux.*1/)
+
+        if(data[1] =~ /^:[^ ]+ *322 *sherlock *#linux.*1/)
             puts "\tRPL_LIST 322 correct"
         else
             puts "\tRPL_LIST 322 incorrect"
             return false
         end
-        
-        if(data[2] =~ /^:[^ ]+ *323 *rui *:End of \/LIST/)
+
+        if(data[2] =~ /^:[^ ]+ *323 *sherlock *:End of \/LIST/)
             puts "\tRPL_LISTEND 323 correct"
         else
             puts "\tRPL_LISTEND 323 incorrect"
             return false
         end
-        
+
         return true
     end
-    
+
     def checkmsg(from, to, msg)
 	reply_matches(/^:#{from} *PRIVMSG *#{to} *:#{msg}/, "PRIVMSG")
     end
-    
+
     def check2msg(from, to1, to2, msg)
         data = recv_data_from_server(1);
         if((data[0] =~ /^:#{from} *PRIVMSG *#{to1} *:#{msg}/ && data[1] =~ /^:#{from} *PRIVMSG *#{to2} *:#{msg}/) ||
@@ -251,12 +234,12 @@ class IRC
             return false
         end
     end
-    
+
     def check_echojoin(from, channel)
 	reply_matches(/^:#{from}.*JOIN *#{channel}/,
 			    "Test if first client got join echo")
     end
-    
+
     def part_channel(parter, channel)
         send("PART #{channel}")
 	reply_matches(/^:#{parter}![^ ]+@[^ ]+ *QUIT *:/)
@@ -328,11 +311,11 @@ begin
 # The RFC states that there is no response to a NICK command,
 # so we test for this.
     tn = test_name("NICK")
-    irc.send_nick("rui")
+    irc.send_nick("sherlock")
     puts "<-- Testing for silence (5 seconds)..."
-    
+
     eval_test(tn, nil, nil, irc.test_silence(5))
-    
+
 
 ############## TEST USER COMMAND ##################
 # The RFC states that there is no response on a USER,
@@ -348,18 +331,18 @@ begin
     irc.send_user("myUsername myHostname myServername :My real name")
     puts "<-- Testing for silence (5 seconds)..."
 
-    eval_test(tn, nil, "should not return a response on its own", 
-	      irc.test_silence(5))
+    eval_test(tn, nil, "should not return a response on its own",
+	      irc.test_silence(1))
 
 ############# TEST FOR REGISTRATION ##############
 # A NICK+USER is a registration that triggers the
 # MOTD.  This test sends a nickname to complete the registration,
 # and then checks for the MOTD.
-    tn = test_name("Registration")
-    irc.send_nick("rui")
-    puts "<-- Listening for MOTD...";
-    
-    eval_test(tn, nil, nil, irc.get_motd())
+tn = test_name("Registration")
+irc.send_nick("sherlock")
+puts "<-- Listening for MOTD...";
+
+eval_test(tn, nil, nil, irc.get_motd())
 
 ############## TEST JOINING ####################
 # We join a channel and make sure the client gets
@@ -367,7 +350,7 @@ begin
 # gets a names list.
     tn = test_name("JOIN")
     eval_test(tn, nil, nil,
-	      irc.join_channel("rui", "#linux"))
+        irc.join_channel("sherlock", "#linux"))
 
 ############## WHO ####################
 # Who should list everyone in a channel
@@ -380,41 +363,92 @@ begin
 ############## LIST ####################
 # LIST is used to check all the channels on a server.
 # The response should include #linux and its format should follow the RFC.
-    tn = test_name("LIST")
-    eval_test(tn, nil, nil, irc.list())
+    # tn = test_name("LIST")
+    # eval_test(tn, nil, nil, irc.list())
 
 ############## PRIVMSG ###################
 # Connect a second client that sends a message to the original client.
 # Test that the original client receives the message.
-    tn = test_name("PRIVMSG")
-    irc2 = IRC.new($SERVER, $PORT, '', '')
-    irc2.connect()
-    irc2.send_nick("rui2")
-    irc2.send_user("myUsername2 myHostname2 myServername2 :My real name 2")
-    msg = "to IRC or not to IRC, that is the question"
-    irc2.send_privmsg("rui", msg)
-    eval_test(tn, nil, nil, irc.checkmsg("rui2", "rui", msg))
+tn = test_name("PRIVMSG")
+irc2 = IRC.new($SERVER, $PORT, '', '')
+irc2.connect()
+irc2.send_nick("john")
+irc2.send_user("myUsername2 myHostname2 myServername2 :My real name 2")
+msg = "2B | !2B, that is the question?"
+irc2.send_privmsg("sherlock", msg)
+eval_test(tn, nil, nil, irc2.checkmsg("john", "sherlock", msg))
+
+# Connect third client who sends msg to 2nd client, 
+# test if second client receives msg
+tn = test_name("PRIVMSG2")
+irc3 = IRC.new($SERVER, $PORT, '', '')
+irc3.connect()
+irc3.send_nick("irene")
+irc3.send_user("myUsername3 myHostname3 myServername3 :My real name 3")
+msg = "What is the purpose of life?"
+irc3.send_privmsg("john", msg)
+eval_test(tn, nil, nil, irc3.checkmsg("irene", "john", msg))
 
 ############## ECHO JOIN ###################
 # When another client joins a channel, all clients
 # in that channel should get :newuser JOIN #channel
     tn = test_name("ECHO ON JOIN")
     # "raw" means no testing of responses done
-    irc2.raw_join_channel("rui2", "#linux")
+    irc2.raw_join_channel("john", "#linux")
     irc2.ignore_reply()
-    eval_test(tn, nil, nil, irc.check_echojoin("rui2", "#linux"))
+    eval_test(tn, nil, nil,
+        irc2.join_channel("john", "#linux"))
+    eval_test(tn, nil, nil, irc2.check_echojoin("john", "#linux"))
+
 
 
 ############## MULTI-TARGET PRIVMSG ###################
 # A client should be able to send a single message to
 # multiple targets, with ',' as a delimiter.
-# We use client2 to send a message to rui and #linux.
+# We use client2 to send a message to sherlock and #linux.
 # Both should receive the message.
     tn = test_name("MULTI-TARGET PRIVMSG")
-    msg = "success is 1 pcent inspiration and 99 pcent perspiration"
-    irc2.send_privmsg("rui,#linux", msg)
-    eval_test(tn, nil, nil, irc.check2msg("rui2", "rui", "#linux", msg))
+    msg = "success is 1 % inspiration and 99 % perspiration"
+    irc2.send_privmsg("sherlock, #linux", msg)
+    eval_test(tn, nil, nil, irc.checkmsg("john", "sherlock", "#linux", msg))
     irc2.ignore_reply()
+
+    # Use client3 to join channel #linux , send msg to all clients
+    tn = test_name("ECHO ON IRENE JOINING LINUX")
+    irc3.raw_join_channel("irene", "#linux")
+    irc3.ignore_reply()
+    eval_test(tn, nil, nil,
+        irc3.join_channel("irene", "#linux"))
+    eval_test(tn, nil, nil, irc3.check_echojoin("irene", "#linux"))
+
+    tn = test_name("MULTI-TARGET PRIVMSG2")
+    msg = "Imagination is more powerful than knowlegdge"
+    irc3.send_privmsg("#linux", msg)
+    eval_test(tn, nil, nil, irc3.checkmsg("irene", "#linux", msg))
+    irc3.ignore_reply()
+
+
+    # create client 4, join channel #linux 
+    tn = test_name("ECHO ON WATSON JOINING LINUX")
+    irc4 = IRC.new($SERVER, $PORT, '', '')
+    irc4.connect()
+    irc4.send_nick("watson")
+    irc4.send_user("myUsername4 myHostname4 myServername4 :My real name 4")
+    irc4.raw_join_channel("watson", "#linux")
+    irc4.ignore_reply()
+    eval_test(tn, nil, nil,
+        irc4.join_channel("watson", "#linux"))
+    eval_test(tn, nil, nil, irc4.check_echojoin("watson", "#linux"))
+
+    #send msg to all other clients on channel, check if received
+    tn = test_name("MULTI-TARGET PRIVMSG3")
+    msg = "It is not okay. It is what it is."
+    irc4.send_privmsg("sherlock", "john", "irene", "#linux", msg)
+    eval_test(tn, nil, nil, irc4.checkmsg("watson", "sherlock", "john", "irene", 
+                                            "#linux", msg))
+    irc4.ignore_reply()
+
+
 
 ############## PART ###################
 # When a client parts a channel, a QUIT message
@@ -422,15 +456,75 @@ begin
 # the client that is parting.
     tn = test_name("PART")
     eval_test("PART echo to self", nil, nil,
-	      irc2.part_channel("rui2", "#linux"),
+	      irc2.part_channel("john", "#linux"),
 	      0) # note that this is a zero-point test!
 
     eval_test("PART echo to other clients", nil, nil,
-	      irc.check_part("rui2", "#linux"))
+	      irc.check_part("john", "#linux"))
 
-## Your tests go here!
-# 
-# Things you might want to test:
+
+# Client 3 disconnect, check if it's automatically parted
+    tn = test_name("PART2")
+
+
+#----------------------
+# More TESTS continued
+#----------------------
+
+#client 2 (John) joining new channel #turing
+tn = test_name("ECHO ON JOINING NEW CHANNEL")
+irc2.raw_join_channel("john", "#turing") 
+irc2.ignore_reply()
+
+#part current channel #linux, send echo to self
+eval_test("PART echo to self", nil, nil,
+      irc2.part_channel("john", "#linux"),
+      0) 
+#send echo to all clients on #linux when parting
+eval_test("PART echo to other clients", nil, nil,
+      irc2.check_part("john", "#linux"))
+
+#client gets his join echoed back (which comes first), then
+# gets a names list
+eval_test(tn, nil, nil,
+    irc2.join_channel("john", "#turing"))
+#send echo to clients on #turing 
+eval_test(tn, nil, nil, irc2.check_echojoin("john", "#turing"))
+
+
+
+#client 5(Adler) joins new channel (for first time) #turing 
+irc5 = IRC.new($SERVER, $PORT, '', '')
+irc5.connect()
+irc5.send_nick("adler")
+irc5.send_user("myUsername5 myHostname5 myServername5 :My real name 5")
+
+tn = test_name("ECHO ON JOIN3")
+irc5.raw_join_channel("adler", "#turing") #joining new channel #turing
+irc5.ignore_reply()
+eval_test(tn, nil, nil,
+    irc5.join_channel("adler", "#turing"))
+eval_test(tn, nil, nil, irc5.check_echojoin("adler", "#turing"))
+
+#check message from Adler to John
+msg = "Are you getting my msg, John"
+irc5.send_privmsg("john", msg)
+eval_test(tn, nil, nil, irc5.checkmsg("adler", "john", msg))
+
+##check reply from John
+msg = "Yes I got you msg, Adler"
+irc2.send_privmsg("adler", msg)
+eval_test(tn, nil, nil, irc2.checkmsg("john", "adler", msg))
+
+#Adler sends msg to #turing
+tn = test_name("MULTI-TARGET MSG ON JOINING")
+msg = "Hey y'all on channel Turing! Adler here!"
+irc5.send_privmsg("#turing", msg)
+eval_test(tn, nil, nil, irc5.checkmsg("adler", "#turing", msg))
+irc5.ignore_reply()
+
+
+# Things to test:
 #  - Multiple clients in a channel
 #  - Abnormal messages of various sorts
 #  - Clients that misbehave/disconnect/etc.
